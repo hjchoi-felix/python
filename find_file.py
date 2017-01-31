@@ -3,9 +3,11 @@
 import os
 import re
 import win32api
+import win32ui
 import fnmatch
 import stat
 from symlink import *
+import subprocess
 
 def get_file_size(file):
     file.seek(0, 2)
@@ -13,12 +15,25 @@ def get_file_size(file):
     return size
 
 def xcopy(src, dst):
-    os.system('xcopy "%s" "%s"' % (src, dst))
+    #os.system('xcopy "%s" "%s"' % (src, dst))
+
+    #subprocess.call(['xcopy', src, dst])
+
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    subprocess.call(['xcopy', src, dst], startupinfo=si)
+
 
 def remove_file(path):
     os.chmod(path, stat.S_IWRITE)
     os.remove(path)
 
+def create_dir_if_not_exists(path):
+    dir = os.path.dirname(path)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+        print('create new dir : {}'.format(path))
+        
 def find_file(root_folder, file_name, ignore_path = None):
     founds = []
     rex = re.compile(file_name, re.IGNORECASE)
@@ -52,31 +67,37 @@ def find_file_in_all_drives(file_name, ignore_path = None):
     all_founds = []
     for drive in win32api.GetLogicalDriveStrings().split('\000')[:-1]:
         all_founds.extend(find_file(drive, file_name, ignore_path))
+    print('found results : ' + str(len(all_founds)))
     return all_founds
 
-def move_files(file_name, dest_dir):
+def move_files(search_text, dest_dir):
     if not dest_dir.endswith('\\'):
         print('dest dir needs to be ends with \\')
         return
 
-    founds_in_all_drives = find_file_in_all_drives(file_name, dest_dir)
+    create_dir_if_not_exists(dest_dir)
 
-    print('found results : ' + str(len(founds_in_all_drives)))
-    for find_file_path in founds_in_all_drives:
-        if dest_dir in find_file_path:
-            print(find_file_path + ' is dest dir file. pass')
+    founds = find_file_in_all_drives(search_text, dest_dir)
+    job_counter = 0
+    
+    for file_path in founds:
+        if dest_dir in file_path:
+            print(file_path + ' is dest dir file. pass')
             continue
-        dest_path = dest_dir + os.path.basename(find_file_path)
-        print('dest : ' + dest_path)
+        file_name = os.path.basename(file_path)
+        dest_path = dest_dir + file_name
+        print('move : ' + file_name )
         if not os.path.isfile(dest_path):
-            #print('\tdummy call copy : ' + find_file_path)
-            xcopy(find_file_path, dest_dir)
-            print('\t' + find_file_path + ' copied')
+            #print('\tdummy call copy : ' + file_path)
+            xcopy(file_path, dest_dir)
+            print('\t' + file_path + ' copied')
             if os.path.isfile(dest_path):
                 print('\t' + dest_path + ' copied and delete source file')
-                remove_file(find_file_path)
+                remove_file(file_path)
         else:
             print('\t' + dest_path + 'is already exists')
+        job_counter = job_counter + 1
+        print('{}/{} completed'.format(job_counter, len(founds)))
 
 def remove_dup_files_in_dest(file_name, dest_dir):
     founds = find_file_in_all_drives(file_name, dest_dir)
@@ -89,11 +110,14 @@ def remove_dup_files_in_dest(file_name, dest_dir):
             
 def create_symlinks(search_text, dest_dir):
     founds = find_file_in_all_drives(search_text)
+
+    create_dir_if_not_exists(dest_dir)
+    
     print('founds : ' + str(len(founds)))
     for file_path in founds:
         if dest_dir in file_path:
             continue    #pass if search file is in dest dir
-        link_name = os.path.basename(file_path) + symlink.SYMLINK_SUFFIX
+        link_name = os.path.basename(file_path) + SYMLINK_SUFFIX
         link_path = os.path.join(dest_dir, link_name)
         if os.path.isfile(link_path):
             continue    #pass if already exists
@@ -104,10 +128,17 @@ def create_symlinks(search_text, dest_dir):
 #===================================================
 # run
 #===================================================
-
-search_text = 'aso_haruka'
-#search_text = 'jux(.*)922'
-dest_dir = 'D:\\__collections\\__collection_aso_haruka\\'
+'''
+todo
+-wakaba_kana 고화질
+-mitsui hikaru 점검
+harumiya suzu 전편
+tomoka akari 점검
+kono madoka 전편 - 넓은몸
+'''
+search_text = 'pppd'
+#search_text = 'soe(.*)710'
+dest_dir = r'C:\__vid_temps\pppd' + '\\'
 
 #remove_dup_files_in_dest(search_text, dest_dir)
 find_file_in_all_drives( search_text )
@@ -115,4 +146,8 @@ find_file_in_all_drives( search_text )
 #move_files(search_text, dest_dir)
 #create_symlinks(search_text, dest_dir)
 
-#symlink(r'J:\새 폴더\snis672.avi', r'snis_links\snis672.avi')
+#symlink(r'xxxx', r'yyyy')
+#xcopy('test_file.wmv', 'test_filder')
+#create_dir_if_not_exists(dest_dir)
+
+win32ui.MessageBox("Script End", "Python", 4096)
