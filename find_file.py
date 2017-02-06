@@ -136,13 +136,13 @@ harumiya suzu 전편
 tomoka akari 점검
 kono madoka 전편 - 넓은몸
 '''
-search_text = 'pppd'
+search_text = 'juy'
 #search_text = 'soe(.*)710'
-dest_dir = r'C:\__vid_temps\pppd' + '\\'
+dest_dir = r'C:\__vid_temps\juy' + '\\'
 
 #remove_dup_files_in_dest(search_text, dest_dir)
-find_file_in_all_drives( search_text )
-#find_file('L:\\새 폴더 (12)', search_text)
+#find_file_in_all_drives( search_text )
+find_file('c:\\', "star(.*)752")
 #move_files(search_text, dest_dir)
 #create_symlinks(search_text, dest_dir)
 
